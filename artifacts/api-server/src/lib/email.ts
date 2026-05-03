@@ -172,6 +172,70 @@ export function buildPipelineStageEmail(opts: {
 </html>`;
 }
 
+export function buildPaymentFailedEmail(opts: {
+  companyName: string;
+  hrContactName?: string;
+  amountDue: number;
+  currency: string;
+  invoiceUrl: string | null;
+}): string {
+  const { companyName, hrContactName, amountDue, currency, invoiceUrl } = opts;
+  const displayName = hrContactName ?? "there";
+  const formattedAmount = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(amountDue / 100);
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:Inter,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="background:#1e293b;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center;">
+      <h1 style="color:#fff;font-size:24px;margin:0;font-weight:700;">HireForward</h1>
+      <p style="color:#94a3b8;margin:4px 0 0;font-size:14px;">Billing Notification</p>
+    </div>
+    <div style="background:#fff;border-radius:12px;padding:32px;border:1px solid #e2e8f0;">
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:28px;">⚠️</span>
+        <div>
+          <p style="color:#dc2626;font-size:16px;font-weight:700;margin:0;">Payment Failed</p>
+          <p style="color:#64748b;font-size:13px;margin:2px 0 0;">Action required to keep your account active</p>
+        </div>
+      </div>
+      <h2 style="color:#1e293b;font-size:20px;margin:0 0 8px;">Hi ${displayName},</h2>
+      <p style="color:#64748b;font-size:15px;line-height:1.6;margin:0 0 20px;">
+        We were unable to process the payment of <strong style="color:#1e293b;">${formattedAmount}</strong>
+        for your <strong>${companyName}</strong> HireForward subscription.
+      </p>
+      <div style="background:#f1f5f9;border-radius:8px;padding:16px;margin-bottom:24px;">
+        <p style="color:#475569;font-size:14px;margin:0 0 8px;"><strong>What happens next:</strong></p>
+        <ul style="color:#64748b;font-size:14px;line-height:1.7;margin:0;padding-left:20px;">
+          <li>Your account is currently marked <strong>past due</strong> — existing data is unaffected.</li>
+          <li>Stripe will automatically retry the payment over the next few days.</li>
+          <li>If payment isn't resolved, your plan will be downgraded to the Trial tier and candidate interview caps will be enforced immediately.</li>
+        </ul>
+      </div>
+      ${invoiceUrl ? `
+      <div style="text-align:center;margin-bottom:20px;">
+        <a href="${invoiceUrl}" style="display:inline-block;background:#dc2626;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:600;">
+          Pay Invoice Now →
+        </a>
+      </div>` : ""}
+      <p style="color:#64748b;font-size:14px;line-height:1.6;margin:0;">
+        You can also update your payment method via the
+        <strong>Billing</strong> page in your HireForward account settings.
+        If you have questions, reply to this email and we'll help.
+      </p>
+    </div>
+    <p style="color:#94a3b8;font-size:12px;text-align:center;margin:24px 0 0;">
+      Powered by HireForward &mdash; AI-native recruitment platform
+    </p>
+  </div>
+</body>
+</html>`;
+}
+
 export function buildEvaluationReadyEmail(opts: {
   hrEmail: string;
   candidateName: string;

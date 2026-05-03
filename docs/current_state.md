@@ -23,7 +23,19 @@ This document provides a detailed checklist of what is currently implemented in 
 - [x] **Pipeline Badge Column**: Table view includes a colored badge showing each candidate's current pipeline stage.
 - [x] **Candidate Report UI**: Full evaluation detail page (`/candidates/:id`) with score ring, radar chart, highlights/red flags, per-criterion breakdown with justifications, response timing heatmap, and collapsible interview transcript.
 - [x] **Manager View Share Flow**: "Share Report" button on the candidate detail page generates a unique read-only link (`/report/[token]`) copied to clipboard with a toast. The public report page requires no login, shows the full evaluation (score ring, recommendation badge, radar chart, criteria breakdown, transcript), expires after 30 days, and includes a "Powered by HireForward" growth loop badge.
-- [x] **Stripe Billing Integration**: Full billing system with Stripe Checkout + Customer Portal. Three plans: Starter ($99/mo, 20 interviews), Growth ($299/mo, 100 interviews), Enterprise (custom). `/settings/billing` page shows current plan, usage stats (candidates, tokens, AI cost), progress bar, and plan cards. Backend enforces monthly candidate limits (HTTP 402 with `PLAN_LIMIT_REACHED` code). `companies` table has `stripe_customer_id` and `stripe_subscription_id` columns. Stripe webhook registered before `express.json()`, `runMigrations` + `syncBackfill` on startup. Products seeded via `pnpm --filter @workspace/scripts run seed-products`.
+- [x] **Billing Integration**: Full Stripe billing system — Checkout, Customer Portal, and webhook-driven lifecycle management.
+  - **Plans**: Starter ($99/mo, 20 interviews/mo), Growth ($299/mo, 100 interviews/mo), Enterprise (custom, unlimited).
+  - **`/settings/billing` page**: Current plan badge, subscription period, usage progress bar (candidates + tokens + AI cost this month), plan selection cards, "Manage Subscription" portal button.
+  - **Backend enforcement**: `POST /api/processes/:id/candidates` checks monthly candidate count against plan limit and returns HTTP 402 with `PLAN_LIMIT_REACHED` code if exceeded.
+  - **Webhook handler** (`POST /api/stripe/webhook`, registered before `express.json()` for raw Buffer): validates Stripe signature via `stripe-replit-sync`, then dispatches business logic:
+    - `checkout.session.completed` → activates subscription, writes `stripe_customer_id`, `stripe_subscription_id`, sets `plan` + `status = active`.
+    - `customer.subscription.updated` → syncs plan tier and billing status (active / past_due / suspended / cancelled).
+    - `customer.subscription.deleted` → clears subscription ID, downgrades company to `plan = trial`, `status = trial` — caps enforced immediately.
+    - `invoice.payment_failed` → sets `status = past_due`, sends payment-failed warning email (via Resend) to HR contact with invoice link and retry instructions.
+    - `invoice.payment_succeeded` → restores `status = active` if previously past_due or suspended.
+  - **DB**: `companies` table has `stripe_customer_id` and `stripe_subscription_id` TEXT columns (added via SQL migration).
+  - **Seeding**: `pnpm --filter @workspace/scripts run seed-products` creates the three Stripe products (idempotent).
+  - **Stripe connection**: Code is fully wired. Connect via Integrations tab → Stripe to activate (currently skipped gracefully on startup).
 
 ### Panel: Candidate
 - [x] **Secure Access**: JWT-based token verification for candidate entry.
@@ -45,7 +57,6 @@ This document provides a detailed checklist of what is currently implemented in 
 - [ ] **Landing Page Expansion**: Pricing table, detailed FAQ, and SEO meta tags (partially added in index.html, but needs content).
 
 ### Mid Priority
-- [ ] **Billing Integration**: Connecting `token_usage` to Stripe for "Pay-as-you-go" or "Subscription" plans.
 - [ ] **Multi-language Support**: Expanding beyond English/Portuguese for the AI Interviewer.
 
 ### Low Priority
@@ -56,11 +67,10 @@ This document provides a detailed checklist of what is currently implemented in 
 
 ## 🚀 Roadmap (Logical Progression)
 
-1. **Landing Page**: Professionalize the home page to look like a premium SaaS, focusing on the approval criteria and value proposition.
-2. **Token/Cost Dashboard**: Finalize the Admin/Company views that show cost-per-candidate to prepare for monetization.
-3. **Billing Integration**: Connect token usage to Stripe for monetization.
-4. **Settings**: Allow companies to upload logos and customize the interview language.
-5. **Export Reports**: PDF generation of candidate evaluations.
+1. **Landing Page**: Add a full pricing table matching the 3 Stripe plans so visitors can self-serve.
+2. **Token/Cost Dashboard**: Finalize Admin views that show cost-per-candidate for internal monitoring.
+3. **Settings**: Allow companies to upload logos and customize the interview language.
+4. **Export Reports**: PDF generation of candidate evaluations.
 
 ---
 
