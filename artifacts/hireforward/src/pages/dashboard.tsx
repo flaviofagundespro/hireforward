@@ -356,7 +356,7 @@ export default function Dashboard() {
 
           <Card className="bg-purple-50 border-purple-100 dark:bg-purple-950/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">Tokens (ano)</CardTitle>
+              <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">Tokens (year)</CardTitle>
               <TrendingUp className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
@@ -365,7 +365,7 @@ export default function Dashboard() {
                   <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
                     {tokensYear.toLocaleString()}
                   </div>
-                  <p className="text-xs text-purple-500 mt-1">Acumulado YTD</p>
+                  <p className="text-xs text-purple-500 mt-1">Accumulated YTD</p>
                 </>
               )}
             </CardContent>
@@ -373,7 +373,7 @@ export default function Dashboard() {
 
           <Card className="bg-orange-50 border-orange-100 dark:bg-orange-950/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">Custo (ano)</CardTitle>
+              <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">Cost (year)</CardTitle>
               <DollarSign className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
@@ -382,7 +382,7 @@ export default function Dashboard() {
                   <div className="text-2xl font-bold text-orange-700 dark:text-orange-400">
                     ${costYear.toFixed(4)}
                   </div>
-                  <p className="text-xs text-orange-500 mt-1">Total 2026</p>
+                  <p className="text-xs text-orange-500 mt-1">Total {new Date().getFullYear()}</p>
                 </>
               )}
             </CardContent>

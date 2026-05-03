@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { ArrowRight, Check, X, Bot, Target, ShieldCheck, Settings2, MessageSquare, LayoutList } from "lucide-react";
+import { ArrowRight, Check, X, Menu, Bot, Target, ShieldCheck, Settings2, MessageSquare, LayoutList } from "lucide-react";
 
 /* ─── Scroll-reveal hook ───────────────────────────────────────────────────── */
 function useReveal(selector: string) {
@@ -33,7 +33,7 @@ const PLANS = [
     highlight: false,
     features: [
       { label: "1 active process", ok: true },
-      { label: "5 candidates / mo", ok: true },
+      { label: "3 candidates / mo", ok: true },
       { label: "500K tokens", ok: true },
       { label: "PDF Export", ok: false },
       { label: "Manager View", ok: false },
@@ -52,7 +52,7 @@ const PLANS = [
     highlight: false,
     features: [
       { label: "3 active processes", ok: true },
-      { label: "30 candidates / mo", ok: true },
+      { label: "20 candidates / mo", ok: true },
       { label: "3M tokens", ok: true },
       { label: "PDF Export", ok: true },
       { label: "Manager View", ok: true },
@@ -71,7 +71,7 @@ const PLANS = [
     highlight: true,
     features: [
       { label: "10 active processes", ok: true },
-      { label: "150 candidates / mo", ok: true },
+      { label: "100 candidates / mo", ok: true },
       { label: "15M tokens", ok: true },
       { label: "PDF Export", ok: true },
       { label: "Manager View", ok: true },
@@ -195,6 +195,7 @@ function FaqSection() {
 
 export default function Home() {
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useReveal(".reveal-card");
 
   return (
@@ -231,24 +232,45 @@ export default function Home() {
       <div className="min-h-[100dvh] flex flex-col" style={{ background: "#F8F9FB" }}>
 
         {/* ── Section 1: Nav ─────────────────────────────────────────────────── */}
-        <header className="h-16 flex items-center justify-between px-6 md:px-16 border-b border-slate-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="flex items-center gap-2.5 font-bold text-xl tracking-tight" style={{ color: "#0F172A" }}>
-            <img src={`${basePath}/logo.svg`} alt="HireForward" className="h-7 w-7" />
-            HireForward
-          </div>
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="#how-it-works" className="nav-link text-sm font-medium">How it Works</a>
-            <a href="#pricing" className="nav-link text-sm font-medium">Pricing</a>
-            <a href="#faq" className="nav-link text-sm font-medium">FAQ</a>
-          </nav>
-          <div className="flex items-center gap-5">
-            <Link href="/sign-in" className="nav-link text-sm font-medium">Log in</Link>
-            <Link href="/sign-up">
-              <button className="text-sm font-semibold text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity" style={{ background: "#1E2D5E" }}>
-                Get Started
+        <header className="border-b border-slate-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+          <div className="h-16 flex items-center justify-between px-6 md:px-16">
+            <div className="flex items-center gap-2.5 font-bold text-xl tracking-tight" style={{ color: "#0F172A" }}>
+              <img src={`${basePath}/logo.svg`} alt="HireForward" className="h-7 w-7" />
+              HireForward
+            </div>
+            <nav className="hidden md:flex items-center gap-8">
+              <a href="#how-it-works" className="nav-link text-sm font-medium">How it Works</a>
+              <a href="#pricing" className="nav-link text-sm font-medium">Pricing</a>
+              <a href="#faq" className="nav-link text-sm font-medium">FAQ</a>
+            </nav>
+            <div className="flex items-center gap-3 md:gap-5">
+              <Link href="/sign-in" className="nav-link text-sm font-medium hidden sm:block">Log in</Link>
+              <Link href="/sign-up">
+                <button className="text-sm font-semibold text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity" style={{ background: "#1E2D5E" }}>
+                  Get Started
+                </button>
+              </Link>
+              <button
+                className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                onClick={() => setMobileMenuOpen((o) => !o)}
+                aria-label="Toggle menu"
+                aria-expanded={mobileMenuOpen}
+              >
+                {mobileMenuOpen
+                  ? <X className="h-5 w-5" style={{ color: "#0F172A" }} />
+                  : <Menu className="h-5 w-5" style={{ color: "#0F172A" }} />}
               </button>
-            </Link>
+            </div>
           </div>
+          {/* Mobile nav drawer */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-slate-100 bg-white px-6 py-4 flex flex-col gap-1">
+              <a href="#how-it-works" className="nav-link text-sm font-medium py-2.5 border-b border-slate-50" onClick={() => setMobileMenuOpen(false)}>How it Works</a>
+              <a href="#pricing" className="nav-link text-sm font-medium py-2.5 border-b border-slate-50" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
+              <a href="#faq" className="nav-link text-sm font-medium py-2.5 border-b border-slate-50" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
+              <Link href="/sign-in" className="nav-link text-sm font-medium py-2.5 sm:hidden" onClick={() => setMobileMenuOpen(false)}>Log in</Link>
+            </div>
+          )}
         </header>
 
         {/* ── Section 2: Hero ────────────────────────────────────────────────── */}
@@ -503,8 +525,8 @@ export default function Home() {
 
             {/* Center */}
             <div className="flex items-center gap-6 text-sm" style={{ color: "#94a3b8" }}>
-              <a href="#" className="hover:text-slate-600 transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-slate-600 transition-colors">Terms of Service</a>
+              <a href="#pricing" className="hover:text-slate-600 transition-colors">Pricing</a>
+              <a href="#faq" className="hover:text-slate-600 transition-colors">FAQ</a>
               <a href="mailto:hello@hireforward.ai" className="hover:text-slate-600 transition-colors">Contact</a>
             </div>
 

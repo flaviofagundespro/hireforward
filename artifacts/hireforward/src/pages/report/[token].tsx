@@ -150,9 +150,9 @@ export default function SharedReport() {
         <SharedHeader />
         <div className="flex-1 p-6 md:p-10 max-w-4xl mx-auto w-full space-y-6">
           <Skeleton className="h-8 w-72" />
-          <div className="grid grid-cols-3 gap-6">
-            <Skeleton className="h-56 col-span-1 rounded-xl" />
-            <Skeleton className="h-56 col-span-2 rounded-xl" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Skeleton className="h-56 md:col-span-1 rounded-xl" />
+            <Skeleton className="h-56 md:col-span-2 rounded-xl" />
           </div>
           <Skeleton className="h-80 rounded-xl" />
         </div>

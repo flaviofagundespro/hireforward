@@ -49,6 +49,14 @@ This document provides a detailed checklist of what is currently implemented in 
 - [x] **Notifications (Pipeline Stage Change)**: Email via Resend to HR contact when a candidate is moved to Approved or Rejected, including candidate name, position, AI score, and report link.
 - [x] **Automatic Stage Transition**: When a candidate completes the AI interview, their pipeline stage is automatically set to "In Review".
 
+### Launch Readiness Pass (2026-05-03)
+- [x] **Plan limits synced across landing page and backend**: Trial=3, Starter=20, Growth=100 candidates/mo — now consistent everywhere.
+- [x] **Portuguese strings removed from dashboard**: "Tokens (ano)" → "Tokens (year)", "Custo (ano)" → "Cost (year)", "Acumulado YTD" → "Accumulated YTD".
+- [x] **Dead footer links fixed**: Removed non-existent "Privacy Policy" and "Terms of Service" pages (were `href="#"`); replaced with working section anchor links (Pricing, FAQ, Contact).
+- [x] **Mobile navigation added to landing page**: Hamburger menu reveals How it Works / Pricing / FAQ anchor links on mobile; collapses on link tap.
+- [x] **Report page skeleton fixed**: Loading skeleton `grid-cols-3` was not responsive — fixed to `grid-cols-1 md:grid-cols-3`.
+- [x] **CTA audit**: All buttons on landing page, interview page, and report page route correctly. `mailto:sales@hireforward.ai` and `mailto:hello@hireforward.ai` are intentional contact links. No dead routes.
+
 ---
 
 ## 🛠️ Missing Features & Known Gaps
