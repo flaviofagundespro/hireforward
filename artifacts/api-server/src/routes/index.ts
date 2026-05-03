@@ -9,6 +9,7 @@ import evaluationRouter from "./evaluation";
 import adminRouter from "./admin";
 import settingsRouter from "./settings";
 import managerRouter from "./manager";
+import reportRouter from "./report";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(evaluationRouter);
 router.use(adminRouter);
 router.use(settingsRouter);
 router.use(managerRouter);
+router.use(reportRouter);
 
 export default router;

@@ -22,6 +22,7 @@ This document provides a detailed checklist of what is currently implemented in 
 - [x] **Kanban Pipeline View**: Drag-and-drop board with 5 columns — Invited, In Review, Shortlisted, Approved, Rejected. Powered by `@dnd-kit` with optimistic UI updates. Toggle between Kanban and Table views.
 - [x] **Pipeline Badge Column**: Table view includes a colored badge showing each candidate's current pipeline stage.
 - [x] **Candidate Report UI**: Full evaluation detail page (`/candidates/:id`) with score ring, radar chart, highlights/red flags, per-criterion breakdown with justifications, response timing heatmap, and collapsible interview transcript.
+- [x] **Manager View Share Flow**: "Share Report" button on the candidate detail page generates a unique read-only link (`/report/[token]`) copied to clipboard with a toast. The public report page requires no login, shows the full evaluation (score ring, recommendation badge, radar chart, criteria breakdown, transcript), expires after 30 days, and includes a "Powered by HireForward" growth loop badge.
 
 ### Panel: Candidate
 - [x] **Secure Access**: JWT-based token verification for candidate entry.

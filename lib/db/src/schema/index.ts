@@ -10,3 +10,4 @@ export * from "./conversations";
 export * from "./messages";
 export * from "./system_config";
 export * from "./activity_logs";
+export * from "./shared_reports";

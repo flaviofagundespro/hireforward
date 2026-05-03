@@ -17,6 +17,7 @@ import NewProcess from "./pages/processes/new";
 import ProcessDetail from "./pages/processes/[id]";
 import CandidatesList from "./pages/processes/candidates";
 import CandidateDetail from "./pages/candidates/[id]";
+import SharedReport from "./pages/report/[token]";
 import Interview from "./pages/interview/[token]";
 import Admin from "./pages/admin";
 import AdminCompany from "./pages/admin-company";
@@ -176,6 +177,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/sign-up/*?" component={SignUpPage} />
             
             <Route path="/i/:token" component={Interview} />
+            <Route path="/report/:token" component={SharedReport} />
             <Route path="/admin" component={Admin} />
             <Route path="/admin/companies/:id" component={AdminCompany} />
             <Route path="/impersonate" component={Impersonate} />

@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft, Mail, ThumbsUp, AlertTriangle, CheckCircle2,
-  ChevronDown, ChevronUp, Timer, MessageSquare, Star,
+  ChevronDown, ChevronUp, Timer, MessageSquare, Star, Share2, Check,
 } from "lucide-react";
 import { format } from "date-fns";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   Radar, ResponsiveContainer, Tooltip,
@@ -266,9 +268,35 @@ export default function CandidateDetail() {
   const { id: candidateId } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   const { data: candidate, isLoading: isLoadingCandidate } = useGetCandidate(candidateId);
   const { data: evaluation, isLoading: isLoadingEval } = useGetEvaluation(candidateId);
+
+  const shareMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/candidates/${candidateId}/share-report`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to generate share link");
+      return res.json() as Promise<{ token: string; link: string }>;
+    },
+    onSuccess: (data) => {
+      navigator.clipboard.writeText(data.link).then(() => {
+        setCopied(true);
+        toast({ title: "Link copied!", description: "Share this link — it expires in 30 days." });
+        setTimeout(() => setCopied(false), 3000);
+      }).catch(() => {
+        toast({ title: "Link generated", description: data.link });
+      });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Could not generate share link.", variant: "destructive" });
+    },
+  });
+
+  const handleShare = useCallback(() => {
+    shareMutation.mutate();
+  }, [shareMutation]);
 
   if (isLoadingCandidate || (candidate?.status === "completed" && isLoadingEval)) {
     return (
@@ -318,11 +346,30 @@ export default function CandidateDetail() {
             <span>Added {format(new Date(candidate.createdAt), "MMM d, yyyy")}</span>
           </div>
         </div>
-        {candidate.status !== "completed" && (
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 shrink-0">
-            Interview Incomplete
-          </Badge>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {candidate.status === "completed" && evaluation && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={handleShare}
+              disabled={shareMutation.isPending}
+            >
+              {copied ? (
+                <><Check className="h-3.5 w-3.5 text-green-600" /> Copied!</>
+              ) : shareMutation.isPending ? (
+                <><Share2 className="h-3.5 w-3.5 animate-pulse" /> Sharing…</>
+              ) : (
+                <><Share2 className="h-3.5 w-3.5" /> Share Report</>
+              )}
+            </Button>
+          )}
+          {candidate.status !== "completed" && (
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+              Interview Incomplete
+            </Badge>
+          )}
+        </div>
       </div>
 
       {candidate.status === "completed" && evaluation ? (
