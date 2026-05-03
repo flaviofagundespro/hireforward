@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "gjr-wAb6v78impnfLY9Xl"
+uri = "file://artifacts/hireforward/public/og-image.png"
+type = "image"
+title = "hireforward og social card"
