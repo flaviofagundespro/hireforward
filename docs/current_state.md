@@ -19,6 +19,9 @@ This document provides a detailed checklist of what is currently implemented in 
 - [x] **Job Processes**: CRUD logic for creating and managing job openings.
 - [x] **Configurator Agent**: Conversational setup for interview criteria and prompts.
 - [x] **Candidate Invitations**: Link generation for candidate interviews.
+- [x] **Kanban Pipeline View**: Drag-and-drop board with 5 columns — Invited, In Review, Shortlisted, Approved, Rejected. Powered by `@dnd-kit` with optimistic UI updates. Toggle between Kanban and Table views.
+- [x] **Pipeline Badge Column**: Table view includes a colored badge showing each candidate's current pipeline stage.
+- [x] **Candidate Report UI**: Full evaluation detail page (`/candidates/:id`) with score ring, radar chart, highlights/red flags, per-criterion breakdown with justifications, response timing heatmap, and collapsible interview transcript.
 
 ### Panel: Candidate
 - [x] **Secure Access**: JWT-based token verification for candidate entry.
@@ -28,21 +31,20 @@ This document provides a detailed checklist of what is currently implemented in 
 ### Panel: Evaluation
 - [x] **Evaluator Agent**: Post-interview analysis triggering.
 - [x] **JSON Extraction**: Logic to convert AI output into structured DB records.
-- [x] **Notifications**: Basic email triggering (via Resend) when evaluations are ready.
+- [x] **Notifications (Evaluation Ready)**: Email via Resend to HR contact when evaluation is ready, including score and recommendation.
+- [x] **Notifications (Pipeline Stage Change)**: Email via Resend to HR contact when a candidate is moved to Approved or Rejected, including candidate name, position, AI score, and report link.
+- [x] **Automatic Stage Transition**: When a candidate completes the AI interview, their pipeline stage is automatically set to "In Review".
 
 ---
 
 ## 🛠️ Missing Features & Known Gaps
 
 ### High Priority (Roadmap for Replit)
-- [ ] **Kanban Dashboard**: A drag-and-drop board to manage candidates across status columns (Qualified, Interviewing, Hired).
-- [ ] **Candidate Report UI**: A professional view for HR to read the Evaluator Agent's output (scores, justification, highlights).
 - [ ] **Landing Page Expansion**: Pricing table, detailed FAQ, and SEO meta tags (partially added in index.html, but needs content).
 
 ### Mid Priority
 - [ ] **Billing Integration**: Connecting `token_usage` to Stripe for "Pay-as-you-go" or "Subscription" plans.
 - [ ] **Multi-language Support**: Expanding beyond English/Portuguese for the AI Interviewer.
-- [ ] **Interview Playback**: A way for HR to read the full candidate transcript if needed.
 
 ### Low Priority
 - [ ] **Advanced Security**: Logic to detect and block prompt injection in the candidate chat.
@@ -52,12 +54,12 @@ This document provides a detailed checklist of what is currently implemented in 
 
 ## 🚀 Roadmap (Logical Progression)
 
-1.  **Refine Kanban**: Complete the `dnd-kit` implementation on the dashboard to make candidate management intuitive.
-2.  **Report UI**: Build the evaluation summary component (using `Recharts` for radar charts on criteria scores).
-3.  **Landing Page**: Professionalize the home page to look like a premium SaaS, focusing on the "Xiaomi Credits" approval criteria.
-4.  **Token/Cost Dashboard**: Finalize the Admin/Company views that show cost-per-candidate to prepare for monetization.
-5.  **Settings**: Allow companies to upload logos and customize the interview language.
+1. **Landing Page**: Professionalize the home page to look like a premium SaaS, focusing on the approval criteria and value proposition.
+2. **Token/Cost Dashboard**: Finalize the Admin/Company views that show cost-per-candidate to prepare for monetization.
+3. **Billing Integration**: Connect token usage to Stripe for monetization.
+4. **Settings**: Allow companies to upload logos and customize the interview language.
+5. **Export Reports**: PDF generation of candidate evaluations.
 
 ---
 
-*Last Updated: 2026-05-02*
+*Last Updated: 2026-05-03*
