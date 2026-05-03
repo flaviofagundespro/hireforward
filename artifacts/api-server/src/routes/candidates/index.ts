@@ -4,7 +4,7 @@ import { db } from "@workspace/db";
 import { candidatesTable, jobProcessesTable, evaluationsTable, interviewSessionsTable, companiesTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { CreateCandidateBody } from "@workspace/api-zod";
-import { sendEmail, buildInviteEmail } from "../../lib/email";
+import { sendEmail, buildInviteEmail, buildPipelineStageEmail } from "../../lib/email";
 
 const router = Router();
 
@@ -229,6 +229,49 @@ router.patch("/candidates/:candidateId/stage", requireAuth, async (req, res) => 
       .returning();
 
     res.json(updated);
+
+    if (stage === "approved" || stage === "rejected") {
+      try {
+        const process = processes[0];
+        const [company] = await db
+          .select()
+          .from(companiesTable)
+          .where(eq(companiesTable.id, process.companyId))
+          .limit(1);
+
+        if (company?.hrContactEmail) {
+          const evals = await db
+            .select()
+            .from(evaluationsTable)
+            .where(eq(evaluationsTable.candidateId, candidateId))
+            .limit(1);
+
+          const evalData = evals[0] ?? null;
+
+          const replitDomains = (globalThis.process.env["REPLIT_DOMAINS"] ?? "").split(",").map((d: string) => d.trim()).filter(Boolean);
+          const host = replitDomains[0] ?? "localhost";
+          const protocol = replitDomains[0] ? "https" : "http";
+          const candidateReportUrl = `${protocol}://${host}/candidates/${candidateId}`;
+
+          sendEmail({
+            to: company.hrContactEmail,
+            subject: `Candidate ${stage === "approved" ? "Approved ✅" : "Rejected ❌"}: ${candidates[0].name} — ${process.title}`,
+            html: buildPipelineStageEmail({
+              hrEmail: company.hrContactEmail,
+              candidateName: candidates[0].name,
+              processTitle: process.title,
+              companyName: company.name,
+              stage,
+              overallScore: evalData?.overallScore ?? null,
+              recommendation: evalData?.recommendation ?? null,
+              candidateReportUrl,
+            }),
+          }).catch(() => {});
+        }
+      } catch {
+        req.log.warn({ candidateId, stage }, "Failed to send pipeline stage notification email");
+      }
+    }
   } catch (err) {
     req.log.error({ err }, "Failed to update candidate pipeline stage");
     res.status(500).json({ error: "Internal server error" });

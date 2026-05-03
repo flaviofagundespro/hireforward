@@ -105,6 +105,73 @@ export function buildInviteEmail(opts: {
 </html>`;
 }
 
+export function buildPipelineStageEmail(opts: {
+  hrEmail: string;
+  candidateName: string;
+  processTitle: string;
+  companyName: string;
+  stage: "approved" | "rejected";
+  overallScore?: number | null;
+  recommendation?: string | null;
+  candidateReportUrl: string;
+}): string {
+  const { candidateName, processTitle, companyName, stage, overallScore, recommendation, candidateReportUrl } = opts;
+  const isApproved = stage === "approved";
+  const stageLabel = isApproved ? "Approved" : "Rejected";
+  const accentColor = isApproved ? "#16a34a" : "#dc2626";
+  const bgColor = isApproved ? "#f0fdf4" : "#fef2f2";
+  const borderColor = isApproved ? "#bbf7d0" : "#fecaca";
+  const icon = isApproved ? "✅" : "❌";
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:Inter,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="background:#1e293b;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center;">
+      <h1 style="color:#fff;font-size:24px;margin:0;font-weight:700;">HireForward</h1>
+      <p style="color:#94a3b8;margin:4px 0 0;font-size:14px;">Pipeline Update</p>
+    </div>
+    <div style="background:#fff;border-radius:12px;padding:32px;border:1px solid #e2e8f0;">
+      <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:8px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:24px;">${icon}</span>
+        <div>
+          <p style="color:${accentColor};font-size:16px;font-weight:700;margin:0;">${stageLabel}</p>
+          <p style="color:#64748b;font-size:13px;margin:2px 0 0;">${candidateName} has been moved to <strong>${stageLabel}</strong></p>
+        </div>
+      </div>
+      <h2 style="color:#1e293b;font-size:18px;margin:0 0 16px;">Candidate Update — ${processTitle}</h2>
+      <p style="color:#64748b;font-size:15px;line-height:1.6;margin:0 0 20px;">
+        <strong>${candidateName}</strong> has been marked as <strong style="color:${accentColor};">${stageLabel}</strong>
+        for the <strong>${processTitle}</strong> position at ${companyName}.
+      </p>
+      ${(overallScore !== null && overallScore !== undefined) || recommendation ? `
+      <div style="background:#f8fafc;border-radius:8px;padding:16px;margin-bottom:24px;">
+        ${overallScore !== null && overallScore !== undefined ? `
+        <div style="margin-bottom:8px;">
+          <span style="color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">AI Score</span>
+          <span style="color:#1e293b;font-size:20px;font-weight:700;margin-left:8px;">${overallScore}/100</span>
+        </div>` : ""}
+        ${recommendation ? `
+        <div>
+          <span style="color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">AI Recommendation</span>
+          <span style="color:#1e293b;font-size:14px;font-weight:600;margin-left:8px;">${recommendation}</span>
+        </div>` : ""}
+      </div>` : ""}
+      <div style="text-align:center;">
+        <a href="${candidateReportUrl}" style="display:inline-block;background:#1e3a5f;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:600;">
+          View Full Report →
+        </a>
+      </div>
+    </div>
+    <p style="color:#94a3b8;font-size:12px;text-align:center;margin:24px 0 0;">
+      Powered by HireForward &mdash; AI-native recruitment platform
+    </p>
+  </div>
+</body>
+</html>`;
+}
+
 export function buildEvaluationReadyEmail(opts: {
   hrEmail: string;
   candidateName: string;
