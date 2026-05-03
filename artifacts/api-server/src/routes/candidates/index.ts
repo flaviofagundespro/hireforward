@@ -5,6 +5,7 @@ import { candidatesTable, jobProcessesTable, evaluationsTable, interviewSessions
 import { eq, and, sql } from "drizzle-orm";
 import { CreateCandidateBody } from "@workspace/api-zod";
 import { sendEmail, buildInviteEmail, buildPipelineStageEmail } from "../../lib/email";
+import { PLAN_LIMITS } from "../billing";
 
 const router = Router();
 
@@ -77,6 +78,37 @@ router.post("/processes/:id/candidates", requireAuth, async (req, res) => {
     const parsed = CreateCandidateBody.safeParse(req.body);
     if (!parsed.success) return void res.status(400).json({ error: parsed.error.message });
 
+    // Enforce plan limits — count candidates invited this month for this company
+    const companies = await db.select().from(companiesTable).where(eq(companiesTable.id, companyId)).limit(1);
+    const company = companies[0];
+    const plan = company?.plan ?? "trial";
+    const limit = PLAN_LIMITS[plan] ?? 3;
+
+    if (limit < 999999) {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const countResult = await db.execute(sql`
+        SELECT COUNT(*)::int AS count
+        FROM ${candidatesTable} c
+        JOIN ${jobProcessesTable} jp ON c.job_process_id = jp.id
+        WHERE jp.company_id = ${companyId}
+          AND c.created_at >= ${startOfMonth}
+      `);
+      const usedThisMonth = Number((countResult.rows[0] as { count: number })?.count ?? 0);
+
+      if (usedThisMonth >= limit) {
+        return void res.status(402).json({
+          error: `Monthly interview limit reached (${usedThisMonth}/${limit} on ${plan} plan). Upgrade your plan to invite more candidates.`,
+          code: "PLAN_LIMIT_REACHED",
+          plan,
+          limit,
+          used: usedThisMonth,
+        });
+      }
+    }
+
     const expiresHours = parsed.data.tokenExpiresHours ?? 72;
 
     const [candidate] = await db
@@ -107,8 +139,6 @@ router.post("/processes/:id/candidates", requireAuth, async (req, res) => {
     const inviteLink = `${protocol}://${host}/i/${inviteToken}`;
 
     const process = processes[0];
-    const companies = await db.select().from(companiesTable).where(eq(companiesTable.id, process.companyId)).limit(1);
-    const company = companies[0];
 
     sendEmail({
       to: candidate.email,

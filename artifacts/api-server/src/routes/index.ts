@@ -10,6 +10,7 @@ import adminRouter from "./admin";
 import settingsRouter from "./settings";
 import managerRouter from "./manager";
 import reportRouter from "./report";
+import billingRouter from "./billing";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(adminRouter);
 router.use(settingsRouter);
 router.use(managerRouter);
 router.use(reportRouter);
+router.use(billingRouter);
 
 export default router;

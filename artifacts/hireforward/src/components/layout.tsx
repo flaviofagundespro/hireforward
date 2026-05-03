@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { UserButton, useUser, useAuth } from "@clerk/react";
 import { useEffect, useState } from "react";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
-import { Briefcase, LayoutDashboard, Settings, Loader2, ShieldAlert, X } from "lucide-react";
+import { Briefcase, LayoutDashboard, Settings, Loader2, ShieldAlert, X, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const IMP_SESSION_KEY = "hf_imp";
@@ -64,6 +64,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/processes", label: "Processes", icon: Briefcase },
+    { href: "/settings/billing", label: "Billing", icon: CreditCard },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 

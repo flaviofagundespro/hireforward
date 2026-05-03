@@ -18,6 +18,8 @@ export const companiesTable = pgTable("companies", {
   hrContactName: text("hr_contact_name"),
   hrContactEmail: text("hr_contact_email"),
   hrContactPhone: text("hr_contact_phone"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -1,5 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { runMigrations } from 'stripe-replit-sync';
+import { getStripeSync } from "./stripeClient";
 
 const rawPort = process.env["PORT"];
 
@@ -14,6 +16,33 @@ const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
+
+async function initStripe() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    logger.warn("DATABASE_URL not set — skipping Stripe init");
+    return;
+  }
+  try {
+    logger.info("Initializing Stripe schema...");
+    await runMigrations({ databaseUrl, schema: 'stripe' });
+    logger.info("Stripe schema ready");
+
+    const stripeSync = await getStripeSync();
+
+    const webhookBaseUrl = `https://${(process.env.REPLIT_DOMAINS ?? "").split(",")[0]}`;
+    await stripeSync.findOrCreateManagedWebhook(`${webhookBaseUrl}/api/stripe/webhook`);
+    logger.info("Stripe webhook configured");
+
+    stripeSync.syncBackfill()
+      .then(() => logger.info("Stripe data synced"))
+      .catch((err) => logger.warn({ err }, "Stripe backfill partial error"));
+  } catch (err) {
+    logger.warn({ err }, "Stripe init skipped — integration not connected yet");
+  }
+}
+
+await initStripe();
 
 app.listen(port, (err) => {
   if (err) {

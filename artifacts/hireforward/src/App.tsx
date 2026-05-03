@@ -23,6 +23,7 @@ import Admin from "./pages/admin";
 import AdminCompany from "./pages/admin-company";
 import Impersonate from "./pages/impersonate";
 import Settings from "./pages/settings";
+import Billing from "./pages/settings/billing";
 import ManagerView from "./pages/manager/[token]";
 
 const queryClient = new QueryClient();
@@ -190,6 +191,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/processes/:id"><ProtectedRoute component={ProcessDetail} /></Route>
             <Route path="/processes"><ProtectedRoute component={Processes} /></Route>
             <Route path="/candidates/:id"><ProtectedRoute component={CandidateDetail} /></Route>
+            <Route path="/settings/billing"><ProtectedRoute component={Billing} /></Route>
             <Route path="/settings"><ProtectedRoute component={Settings} /></Route>
             
             <Route component={NotFound} />
