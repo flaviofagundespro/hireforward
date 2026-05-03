@@ -3,11 +3,12 @@ import { UserButton, useUser, useAuth } from "@clerk/react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
-import { Briefcase, LayoutDashboard, Settings, Loader2, ShieldAlert, X, CreditCard, AlertTriangle } from "lucide-react";
+import { Briefcase, LayoutDashboard, Settings, Loader2, ShieldAlert, X, CreditCard, AlertTriangle, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const IMP_SESSION_KEY = "hf_imp";
 const PAYMENT_BANNER_DISMISSED_KEY = "hf_payment_banner_v1";
+const QUOTA_BANNER_DISMISSED_KEY = "hf_quota_banner_v1";
 
 type ImpSession = {
   token: string;
@@ -26,28 +27,36 @@ function readImpSession(): ImpSession | null {
   }
 }
 
-/* ─── Payment Issue Banner ───────────────────────────────────────────────── */
+/* ─── Shared billing status hook ─────────────────────────────────────────── */
 
-function PaymentIssueBanner() {
-  const [location] = useLocation();
+type BillingStatus = {
+  plan: string;
+  status: string;
+  candidateLimit: number;
+  usage: { candidatesThisMonth: number };
+};
 
-  // Per-session dismissal — resets on next login (sessionStorage is cleared on tab close)
-  const [dismissed, setDismissed] = useState(
-    () => sessionStorage.getItem(PAYMENT_BANNER_DISMISSED_KEY) === "1",
-  );
-  const [portalLoading, setPortalLoading] = useState(false);
-
-  // Reuse the same query key as the billing page so they share a cache hit
-  const { data } = useQuery<{ status: string } | null>({
+function useBillingStatus() {
+  return useQuery<BillingStatus | null>({
     queryKey: ["billing-status"],
     queryFn: async () => {
       const res = await fetch("/api/billing/status", { credentials: "include" });
       if (!res.ok) return null;
       return res.json();
     },
-    staleTime: 5 * 60 * 1000, // 5 min — don't hammer the API on every route change
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
+}
+
+/* ─── Payment Issue Banner ───────────────────────────────────────────────── */
+
+function PaymentIssueBanner({ data }: { data: BillingStatus | null | undefined }) {
+  const [location] = useLocation();
+  const [dismissed, setDismissed] = useState(
+    () => sessionStorage.getItem(PAYMENT_BANNER_DISMISSED_KEY) === "1",
+  );
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const isPastDue = data?.status === "past_due";
   const isSuspended = data?.status === "suspended";
@@ -79,7 +88,6 @@ function PaymentIssueBanner() {
     setDismissed(true);
   };
 
-  // past_due → amber-tinted red (urgent). suspended → solid deep-red (access at risk).
   const bgClass = isSuspended
     ? "bg-red-700"
     : "bg-gradient-to-r from-red-600 to-red-500";
@@ -99,23 +107,80 @@ function PaymentIssueBanner() {
           {isSuspended ? "🔴" : "⚠️"} {message}
         </span>
       </div>
-
       <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={handleFixNow}
           disabled={portalLoading}
           className="inline-flex items-center gap-1.5 bg-white text-red-700 hover:bg-red-50 active:bg-red-100 px-3 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap shadow-sm"
         >
-          {portalLoading
-            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            : null}
+          {portalLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
           Fix Now →
         </button>
-
         <button
           onClick={handleDismiss}
           aria-label="Dismiss payment warning"
           className="p-1 rounded hover:bg-white/20 transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Quota Warning Banner ───────────────────────────────────────────────── */
+
+function QuotaBanner({ data }: { data: BillingStatus | null | undefined }) {
+  const [location] = useLocation();
+  const [dismissed, setDismissed] = useState(
+    () => sessionStorage.getItem(QUOTA_BANNER_DISMISSED_KEY) === "1",
+  );
+
+  if (!data) return null;
+
+  const { plan, candidateLimit, usage } = data;
+  const used = usage?.candidatesThisMonth ?? 0;
+  const pct = candidateLimit > 0 ? used / candidateLimit : 0;
+
+  const isEnterprise = plan === "enterprise";
+  const needsBanner =
+    !isEnterprise &&
+    pct >= 0.8 &&
+    !dismissed &&
+    !location.startsWith("/settings/billing");
+
+  if (!needsBanner) return null;
+
+  const handleDismiss = () => {
+    sessionStorage.setItem(QUOTA_BANNER_DISMISSED_KEY, "1");
+    setDismissed(true);
+  };
+
+  const isAtLimit = used >= candidateLimit;
+
+  return (
+    <div
+      className="bg-gradient-to-r from-amber-500 to-yellow-400 text-amber-950 px-4 py-3 flex items-center justify-between gap-3 shrink-0 z-39 shadow-sm"
+      role="status"
+    >
+      <div className="flex items-center gap-2.5 min-w-0">
+        <TrendingUp className="h-4 w-4 shrink-0 text-amber-800" />
+        <span className="text-sm font-medium leading-snug">
+          {isAtLimit
+            ? `⚠️ You've reached your limit of ${candidateLimit} candidates this month — upgrade to keep hiring.`
+            : `📊 You've used ${used} of your ${candidateLimit} candidates this month — upgrade to keep hiring.`}
+        </span>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <Link href="/settings/billing#pricing">
+          <button className="inline-flex items-center gap-1.5 bg-amber-900 text-white hover:bg-amber-800 active:bg-amber-950 px-3 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap shadow-sm">
+            Upgrade Plan →
+          </button>
+        </Link>
+        <button
+          onClick={handleDismiss}
+          aria-label="Dismiss quota warning"
+          className="p-1 rounded hover:bg-amber-600/30 transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
@@ -142,6 +207,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       setAuthTokenGetter(() => getToken());
     }
   }, [getToken]);
+
+  // Single shared fetch — both banners consume it from cache
+  const { data: billingData } = useBillingStatus();
 
   const exitImpersonation = () => {
     sessionStorage.removeItem(IMP_SESSION_KEY);
@@ -191,8 +259,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* Payment issue banner — shown on all pages except /settings/billing */}
-      <PaymentIssueBanner />
+      {/* Payment issue banner — critical, shown above quota */}
+      <PaymentIssueBanner data={billingData} />
+
+      {/* Quota warning banner — shown only when payment is fine */}
+      {billingData?.status !== "past_due" && billingData?.status !== "suspended" && (
+        <QuotaBanner data={billingData} />
+      )}
 
       <div className="flex flex-1 md:flex-row flex-col overflow-hidden">
         {/* Sidebar */}

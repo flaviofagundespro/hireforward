@@ -302,11 +302,11 @@ export default function Home() {
                 Start Hiring <ArrowRight className="ml-2 h-4 w-4" />
               </button>
             </Link>
-            <a href="#how-it-works">
-              <button className="inline-flex items-center text-base font-medium h-12 px-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors" style={{ color: "#64748B" }}>
-                See how it works
+            <Link href="/demo" target="_blank" rel="noopener noreferrer">
+              <button className="inline-flex items-center text-base font-semibold h-12 px-8 rounded-xl border-2 hover:opacity-90 transition-opacity" style={{ borderColor: "#6366F1", color: "#6366F1", background: "transparent" }}>
+                Try a Live Demo →
               </button>
-            </a>
+            </Link>
           </div>
         </main>
 
@@ -528,6 +528,8 @@ export default function Home() {
               <a href="#pricing" className="hover:text-slate-600 transition-colors">Pricing</a>
               <a href="#faq" className="hover:text-slate-600 transition-colors">FAQ</a>
               <a href="mailto:hello@hireforward.ai" className="hover:text-slate-600 transition-colors">Contact</a>
+              <Link href="/privacy" className="hover:text-slate-600 transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms</Link>
             </div>
 
             {/* Right */}
