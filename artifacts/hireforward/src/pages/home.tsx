@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { ArrowRight, Check, X, Bot, Target, ShieldCheck, Settings2, MessageSquare, LayoutList } from "lucide-react";
 
@@ -102,6 +102,97 @@ const PLANS = [
   },
 ];
 
+/* ─── FAQ data ──────────────────────────────────────────────────────────────── */
+const FAQS = [
+  {
+    q: "Can candidates use ChatGPT or any AI tool during the interview?",
+    a: "That's the point. HireForward is built for AI-enabled interviews. Candidates can use any tool they want — ChatGPT, Claude, search, their own notes. The evaluator scores how well they think, structure arguments, and leverage resources. That's exactly how they'll work on the job. Blocking tools doesn't make the interview rigorous — it makes it irrelevant.",
+  },
+  {
+    q: "Does it work for non-technical roles like Sales, Marketing, or Finance?",
+    a: "Yes. The AI interviewer adapts to any role. You define the criteria — communication clarity, strategic thinking, problem framing, financial reasoning, whatever matters for the position — and the interviewer probes specifically against them. We have active processes running for SDRs, marketing managers, analysts, and operations leads, not just engineers.",
+  },
+  {
+    q: "How is the score calculated? Is it a black box?",
+    a: "No. Every score maps to the rubric you define when setting up the process. The evaluator agent scores each criterion individually, writes a specific justification for every point, and flags highlights and red flags backed by direct evidence from the conversation. You can read the full transcript alongside the scores. Nothing is hidden.",
+  },
+  {
+    q: "What happens right after the interview ends?",
+    a: "The evaluator agent runs automatically — no manual trigger needed. Within seconds, the full report is ready: overall score, hiring recommendation, criterion-by-criterion breakdown with justifications, and the complete transcript. Your HR contact gets an email notification. The candidate is automatically moved to 'In Review' on the pipeline board.",
+  },
+  {
+    q: "Is candidate and company data secure?",
+    a: "Yes. Interview sessions use single-use JWT links — no account creation, no reuse. Company data is strictly tenant-isolated; no HR team can see another company's candidates or processes. We do not train AI models on your data. Transcripts and evaluations are only accessible to authenticated users within your organization.",
+  },
+  {
+    q: "Can I see a sample evaluation report before signing up?",
+    a: "The fastest way is to just try it. Sign up for the free Trial plan — no credit card needed. Set up a process, run one interview, and you'll see a real evaluation report in under 10 minutes. If it doesn't impress you, you've lost nothing.",
+  },
+];
+
+function FaqSection() {
+  const [open, setOpen] = useState<number | null>(null);
+
+  return (
+    <section id="faq" className="py-24 px-6 md:px-16" style={{ background: "#F8F9FB" }}>
+      <div style={{ maxWidth: 760 }} className="mx-auto">
+        <div className="text-center mb-14">
+          <h2 className="font-extrabold tracking-tight mb-3" style={{ fontSize: "clamp(32px, 4vw, 48px)", color: "#0F172A" }}>
+            Frequently asked questions
+          </h2>
+          <p style={{ fontSize: 17, color: "#64748B" }}>
+            The things people ask us most before they try it.
+          </p>
+        </div>
+
+        <div className="flex flex-col divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+          {FAQS.map((faq, i) => {
+            const isOpen = open === i;
+            return (
+              <div key={i}>
+                <button
+                  className="w-full flex items-center justify-between gap-6 px-7 py-5 text-left transition-colors hover:bg-slate-50/70"
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  aria-expanded={isOpen}
+                >
+                  <span className="font-semibold text-base leading-snug" style={{ color: "#0F172A" }}>
+                    {faq.q}
+                  </span>
+                  <span
+                    className="shrink-0 flex items-center justify-center rounded-full border border-slate-200 transition-transform duration-200"
+                    style={{
+                      width: 28,
+                      height: 28,
+                      transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
+                      color: "#64748B",
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                </button>
+
+                <div
+                  style={{
+                    maxHeight: isOpen ? 400 : 0,
+                    overflow: "hidden",
+                    transition: "max-height 0.28s cubic-bezier(.22,1,.36,1)",
+                  }}
+                >
+                  <p className="px-7 pb-6 pt-1 text-sm leading-relaxed" style={{ color: "#64748B", lineHeight: 1.75 }}>
+                    {faq.a}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   useReveal(".reveal-card");
@@ -148,6 +239,7 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-8">
             <a href="#how-it-works" className="nav-link text-sm font-medium">How it Works</a>
             <a href="#pricing" className="nav-link text-sm font-medium">Pricing</a>
+            <a href="#faq" className="nav-link text-sm font-medium">FAQ</a>
           </nav>
           <div className="flex items-center gap-5">
             <Link href="/sign-in" className="nav-link text-sm font-medium">Log in</Link>
@@ -199,7 +291,7 @@ export default function Home() {
         {/* ── Section 3: Social Proof Bar ────────────────────────────────────── */}
         <div className="border-y border-slate-100 py-5 px-6 text-center" style={{ background: "#F8F9FB" }}>
           <p className="text-sm font-medium tracking-wide" style={{ color: "#94a3b8" }}>
-            Trusted by forward-thinking companies evaluating candidates for{" "}
+            Built for teams hiring across{" "}
             {["Engineering", "Sales", "Marketing", "Finance"].map((t, i, a) => (
               <span key={t}><span style={{ color: "#64748B" }}>{t}</span>{i < a.length - 1 ? ", " : ""}</span>
             ))}{" "}and more.
@@ -373,7 +465,10 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Section 8: Final CTA ───────────────────────────────────────────── */}
+        {/* ── Section 8: FAQ ─────────────────────────────────────────────────── */}
+        <FaqSection />
+
+        {/* ── Section 9: Final CTA ───────────────────────────────────────────── */}
         <section className="py-24 px-6 md:px-16 text-center" style={{ background: "#0F172A" }}>
           <div className="max-w-2xl mx-auto">
             <h2 className="font-extrabold text-white mb-4 tracking-tight" style={{ fontSize: "clamp(30px, 4vw, 48px)" }}>
