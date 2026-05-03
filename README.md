@@ -1,6 +1,21 @@
-# HireForward — AI-Native Recruitment Platform
+# HireForward 🚀
 
-HireForward is a full-stack multi-tenant SaaS platform designed to revolutionize the recruitment process. It allows HR teams to configure AI-driven interviewers, enables candidates to complete AI-conducted interviews via unique secure links, and provides auto-generated evaluations using advanced LLMs (Claude 3.5/4).
+HireForward solves a structural failure in modern hiring: companies still evaluate candidates using 2015 criteria (memorizing syntax, blocking tools) while the real skill in 2026 is solving complex problems effectively using AI.
+
+## 🤖 The Multi-Agent Pipeline
+
+The platform orchestrates three AI agents in sequence to handle the full hiring pipeline:
+
+1. **Configurator Agent:** Interviews the HR team via a structured conversation to extract evaluation priorities and generates a weighted rubric (e.g., problem decomposition, AI tool usage, communication).
+2. **Interviewer Agent:** Conducts the candidate session. Fully adaptive, conversational, with zero tool restrictions. Captures the full transcript with timestamps.
+3. **Evaluator Agent:** Receives the complete transcript plus the rubric contract. Scores each criterion 1–5 with evidence-based justification pulled directly from the conversation. Returns structured JSON with highlights, red flags, and a final recommendation.
+
+## 🏗️ Architecture & Token Optimization
+
+- **Model Agnostic Routing:** Designed to route tasks to the most efficient model.
+- **Cost Attribution:** Token usage is logged per session for cost attribution across company tenants.
+- **Output Contracts:** Strict JSON schemas for evaluator outputs.
+- **Deployment:** Deployed globally via Cloudflare Pages.
 
 ## 🚀 Key Features
 
