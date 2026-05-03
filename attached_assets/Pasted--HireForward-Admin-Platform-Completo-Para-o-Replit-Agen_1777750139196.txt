@@ -1,0 +1,377 @@
+# HireForward — Admin Platform Completo
+**Para o Replit Agent — Bloco Admin**
+
+---
+
+## 1. ASSINANTES / EMPRESAS
+
+### 1.1 Lista de Empresas
+Rota: `/admin/companies`
+
+Tabela com colunas:
+- Logo + Nome da empresa
+- Email do admin
+- Plano atual (Trial / Starter / Growth / Enterprise)
+- Status (Active / Trial / Past Due / Suspended / Cancelled)
+- MRR (valor que paga/mês)
+- Candidatos avaliados no mês
+- Tokens consumidos no mês
+- Data de cadastro
+- Próxima cobrança
+- Ações: Ver detalhe | Suspender | Alterar plano | Impersonar
+
+Filtros:
+- Por plano
+- Por status
+- Por data de cadastro (range)
+- Busca por nome ou email
+
+Cards de resumo no topo:
+- Total de empresas ativas
+- Total em trial
+- Total inadimplentes (past due)
+- MRR total
+
+---
+
+### 1.2 Detalhe da Empresa
+Rota: `/admin/companies/[id]`
+
+**Aba: Perfil**
+- Dados cadastrais completos (nome, email, site, setor, tamanho, timezone)
+- Logo
+- Data de cadastro e último acesso
+- Usuários da empresa (nome, email, papel, último acesso)
+
+**Aba: Assinatura**
+- Plano atual e preço
+- Status da assinatura
+- Data início / próxima cobrança / data cancelamento
+- Histórico de mudanças de plano
+- Botões: Alterar plano | Cancelar assinatura | Dar crédito manual | Estender trial
+
+**Aba: Faturamento**
+- Tabela de pagamentos: Data | Valor | Status | Invoice
+- Botão: Gerar invoice manual
+- Método de pagamento cadastrado (últimos 4 dígitos do cartão)
+
+**Aba: Uso**
+- Tokens consumidos: mês atual / mês anterior / acumulado ano
+- Custo estimado por mês (gráfico de barras últimos 6 meses)
+- Candidatos avaliados por mês
+- Processos criados
+- Limite do plano vs uso atual (barra de progresso por recurso)
+
+**Aba: Processos**
+- Lista de todos os processos seletivos da empresa
+- Nome | Área | Status | Candidatos | Data criação
+
+**Aba: Logs**
+- Atividade da empresa: login, processo criado, candidato adicionado, etc.
+- Chamadas à API com tokens e custo
+
+**Ação: Impersonar empresa**
+- Loga como admin da empresa sem precisar da senha dela
+- Header vermelho aparece: "Viewing as [empresa] — Exit impersonation"
+- Útil para suporte e debug
+
+---
+
+## 2. PLANOS E LIMITES
+
+### 2.1 Gestão de Planos
+Rota: `/admin/plans`
+
+CRUD completo de planos:
+
+| Campo | Tipo | Exemplo |
+|---|---|---|
+| Nome | texto | Growth |
+| Preço mensal (USD) | número | 399 |
+| Preço anual (USD) | número | 3590 |
+| Trial dias | número | 14 |
+| Processos ativos simultâneos | número | 20 |
+| Candidatos/mês | número | 500 |
+| Tokens/mês | número | 5000000 |
+| Usuários na empresa | número | 10 |
+| Export PDF | toggle | sim |
+| Manager view | toggle | sim |
+| Custom branding | toggle | não |
+| API/Webhook | toggle | não |
+| Suporte prioritário | toggle | não |
+| Visible (exibir no pricing público) | toggle | sim |
+
+Botão: Criar novo plano | Editar | Desativar
+
+---
+
+### 2.2 Limites e Bloqueios
+- Quando empresa atinge 80% do limite de tokens/mês: email de alerta automático
+- Quando atinge 100%: escolha (bloquear novas entrevistas OU notificar apenas)
+- Configurável por plano: bloquear automaticamente ou só alertar
+- Admin pode liberar manualmente para uma empresa específica
+
+---
+
+## 3. PAGAMENTOS E FATURAMENTO
+
+### 3.1 Integração Stripe
+Variáveis necessárias:
+```
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PUBLISHABLE_KEY=
+```
+
+Funcionalidades:
+- Checkout de assinatura (empresa escolhe plano e paga com cartão)
+- Cobrança recorrente mensal ou anual automática
+- Webhook do Stripe atualiza status da assinatura em tempo real
+- Portal do cliente Stripe (empresa gerencia próprio cartão/assinatura)
+- Upgrade/downgrade de plano com cálculo de prorata automático
+
+### 3.2 Dashboard Financeiro
+Rota: `/admin/billing`
+
+Cards:
+- MRR (Monthly Recurring Revenue)
+- ARR (Annual Recurring Revenue)
+- Novas assinaturas este mês
+- Cancelamentos este mês
+- Churn rate (%)
+- Receita bruta mês atual
+- Receita líquida (descontando custo de tokens)
+
+Gráficos:
+- MRR por mês (linha, últimos 12 meses)
+- Novas empresas vs cancelamentos por mês (barras)
+- Distribuição por plano (pizza)
+- Custo de API vs receita (para ver margem)
+
+Tabela de transações:
+- Empresa | Plano | Valor | Data | Status | Invoice
+
+---
+
+### 3.3 Invoices
+- Geração automática pelo Stripe após cada cobrança
+- Listagem no admin com filtro por empresa e status
+- Download PDF de qualquer invoice
+- Reenvio de invoice por email
+
+---
+
+### 3.4 Cobranças Manuais (para MVP sem Stripe)
+Se Stripe não for configurado ainda, fallback manual:
+- Campo "Plano pago até" por empresa (data)
+- Campo "Valor pago" e "Data do pagamento"
+- Status manual: Trial / Active / Expired
+- Lembrete automático 7 dias antes de vencer
+
+---
+
+## 4. DADOS E PRIVACIDADE
+
+### 4.1 Retenção de Dados
+Rota: `/admin/settings/data`
+
+Configurações:
+- Tempo de retenção de transcrições (padrão: 12 meses)
+- Tempo de retenção de avaliações (padrão: 24 meses)
+- Tempo de retenção de logs de API (padrão: 6 meses)
+- Deletar dados de empresa cancelada após X dias (padrão: 30)
+
+---
+
+### 4.2 Exclusão de Dados (GDPR / LGPD)
+- Empresa pode solicitar exclusão total dos dados
+- Admin executa: apaga candidatos, sessões, avaliações, usuários da empresa
+- Mantém apenas registro financeiro (obrigação legal)
+- Log de quando a exclusão foi executada e por quem
+
+---
+
+### 4.3 Export de Dados
+- Empresa pode exportar todos os próprios dados (candidatos, avaliações, transcrições) em JSON ou CSV
+- Admin pode fazer export de qualquer empresa para suporte
+- Export de dados financeiros para contabilidade (CSV com todas as transações)
+
+---
+
+## 5. COMUNICAÇÃO E SUPORTE
+
+### 5.1 Emails Transacionais (via Resend já configurado)
+Templates necessários:
+
+| Template | Gatilho |
+|---|---|
+| Boas-vindas | Empresa se cadastra |
+| Confirmação de email | Registro |
+| Trial expirando | 3 dias antes do fim do trial |
+| Trial expirado | No dia que expira |
+| Pagamento confirmado | Após cobrança Stripe |
+| Pagamento falhou | Stripe webhook |
+| Assinatura cancelada | Cancelamento |
+| Limite de uso (80%) | Atingiu 80% tokens |
+| Limite de uso (100%) | Atingiu 100% tokens |
+| Convite de candidato | RH adiciona candidato |
+| Lembrete candidato | Candidato não iniciou em X dias |
+| Recuperação de senha | Forgot password |
+
+---
+
+### 5.2 Announcements (comunicados para clientes)
+Rota: `/admin/announcements`
+- Criar comunicado com título e texto
+- Escolher destinatários: todas as empresas / por plano / empresa específica
+- Canal: email / banner no dashboard deles / ambos
+- Agendar envio ou enviar imediato
+- Histórico de comunicados enviados
+
+---
+
+### 5.3 Suporte Básico
+Rota: `/admin/support`
+- Lista de emails recebidos no suporte (integração simples com caixa de entrada)
+- OU: formulário de contato no lado do cliente que gera ticket aqui
+- Status: Aberto / Em andamento / Resolvido
+- Para MVP: apenas link para email de suporte configurável nas settings
+
+---
+
+## 6. CONFIGURAÇÕES GLOBAIS DA PLATAFORMA
+
+Rota: `/admin/settings`
+
+**API de IA:**
+- Provider atual (Anthropic / OpenAI / Azure / OpenRouter / outro)
+- API Key (campo mascarado, editável)
+- Modelo padrão (ex: claude-sonnet-4-20250514)
+- Preço input por 1M tokens (USD) — para cálculo de custo
+- Preço output por 1M tokens (USD) — para cálculo de custo
+- Timeout máximo de resposta (segundos)
+- Tokens máximos por sessão de entrevista
+
+**Email (Resend — já existe):**
+- API Key
+- Email remetente padrão
+- Nome do remetente padrão
+- Email de suporte (aparece nos templates)
+- Email de reply-to
+
+**Links de Candidato:**
+- Prazo padrão de expiração (dias)
+- Domínio base para os links (ex: hireforward.app)
+
+**Plataforma:**
+- Nome da plataforma (HireForward)
+- Logo (para emails e tela de login)
+- Modo manutenção (toggle — bloqueia acesso de clientes com mensagem customizável)
+- Versão atual do app (informativo)
+
+---
+
+## 7. LOGS E AUDITORIA
+
+### 7.1 Log de API (tokens e custo)
+Rota: `/admin/logs/api`
+- Empresa | Processo | Candidato | Agente (configurador/entrevistador/avaliador) | Tokens input | Tokens output | Custo USD | Duração | Data
+- Filtros: empresa, data range, custo mínimo, agente
+- Export CSV
+- Gráfico: custo por dia (últimos 30 dias)
+
+### 7.2 Log de Atividade (auditoria)
+Rota: `/admin/logs/activity`
+- Todas as ações relevantes na plataforma:
+  - Empresa criada / alterada / suspensa
+  - Plano alterado
+  - Pagamento recebido / falhou
+  - Impersonation executada (por quem, em qual empresa, quando)
+  - Dados deletados
+  - Configurações alteradas
+- Quem fez | O que fez | Quando | IP
+
+---
+
+## 8. MÉTRICAS E RELATÓRIOS
+
+### 8.1 Admin Dashboard (home)
+Rota: `/admin`
+
+Cards principais:
+- Empresas ativas
+- MRR
+- Candidatos avaliados hoje / mês
+- Tokens consumidos hoje / mês
+- Custo de API hoje / mês
+- Margem estimada (MRR - custo API)
+
+Gráficos:
+- Crescimento de empresas (linha, 12 meses)
+- MRR (linha, 12 meses)
+- Candidatos avaliados por dia (barras, 30 dias)
+- Tokens consumidos por dia (barras, 30 dias)
+- Custo API vs Receita por mês (barras empilhadas)
+
+Alertas ativos (card):
+- Empresas inadimplentes
+- Empresas no limite de tokens
+- Trials expirando em 3 dias
+
+---
+
+## ORDEM DE IMPLEMENTAÇÃO SUGERIDA
+
+**Prioridade 1 — Operação básica:**
+1. Gestão de empresas (lista + detalhe) com impersonation
+2. Planos CRUD com limites
+3. Configurações globais completas (API, email, links)
+
+**Prioridade 2 — Financeiro:**
+4. Integração Stripe (checkout + webhook + portal)
+5. Dashboard financeiro (MRR, churn, margem)
+6. Templates de email (trial expirando, pagamento falhou, boas-vindas)
+
+**Prioridade 3 — Controle e dados:**
+7. Logs de API com export CSV
+8. Announcements para clientes
+9. Retenção e exclusão de dados (LGPD/GDPR)
+
+**Prioridade 4 — Inteligência:**
+10. Relatórios de métricas avançados
+11. Alertas automáticos de uso
+12. Log de auditoria completo
+
+---
+
+## VARIÁVEIS DE AMBIENTE COMPLETAS
+
+```
+# IA
+ANTHROPIC_API_KEY=
+AI_MODEL=claude-sonnet-4-20250514
+AI_PRICE_INPUT_PER_1M=3.00
+AI_PRICE_OUTPUT_PER_1M=15.00
+AI_MAX_TOKENS_PER_SESSION=50000
+AI_TIMEOUT_SECONDS=30
+
+# Email (Resend)
+RESEND_API_KEY=
+FROM_EMAIL=noreply@hireforward.app
+FROM_NAME=HireForward
+SUPPORT_EMAIL=support@hireforward.app
+
+# Pagamentos (Stripe)
+STRIPE_SECRET_KEY=
+STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+# App
+APP_URL=https://hireforward.app
+INVITE_EXPIRY_DAYS=7
+DATABASE_URL=
+JWT_SECRET=
+ADMIN_EMAIL=
+ADMIN_PASSWORD=
+SESSION_SECRET=
+```

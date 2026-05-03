@@ -1,0 +1,26 @@
+import { Router, type IRouter } from "express";
+import healthRouter from "./health";
+import authRouter from "./auth";
+import dashboardRouter from "./dashboard";
+import processesRouter from "./processes";
+import candidatesRouter from "./candidates";
+import interviewRouter from "./interview";
+import evaluationRouter from "./evaluation";
+import adminRouter from "./admin";
+import settingsRouter from "./settings";
+import managerRouter from "./manager";
+
+const router: IRouter = Router();
+
+router.use(healthRouter);
+router.use(authRouter);
+router.use(dashboardRouter);
+router.use(processesRouter);
+router.use(candidatesRouter);
+router.use(interviewRouter);
+router.use(evaluationRouter);
+router.use(adminRouter);
+router.use(settingsRouter);
+router.use(managerRouter);
+
+export default router;

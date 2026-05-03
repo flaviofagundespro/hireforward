@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "HireForward"
+version = "1.0.0"
+id = "artifacts/hireforward"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18201
+
+[services.development]
+run = "pnpm --filter @workspace/hireforward run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/hireforward", "run", "build" ]
+publicDir = "artifacts/hireforward/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18201"
+BASE_PATH = "/"

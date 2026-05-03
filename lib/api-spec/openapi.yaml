@@ -1,0 +1,1362 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: HireForward — AI-Native Recruitment Platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: companies
+    description: Company (tenant) management
+  - name: users
+    description: User management
+  - name: processes
+    description: Job process management
+  - name: candidates
+    description: Candidate management
+  - name: interviews
+    description: Interview session management
+  - name: evaluations
+    description: Evaluation and scoring
+  - name: dashboard
+    description: Dashboard summary data
+  - name: admin
+    description: Owner/admin operations
+  - name: anthropic
+    description: Anthropic AI chat operations
+  - name: settings
+    description: Company settings management
+  - name: manager
+    description: Manager read-only view
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── Auth / Session ─────────────────────────────────────────────────────────
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current authenticated user info
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+
+  # ── Dashboard ──────────────────────────────────────────────────────────────
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get HR dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/weekly-activity:
+    get:
+      operationId: getWeeklyActivity
+      tags: [dashboard]
+      summary: Get candidates evaluated per week for last 8 weeks
+      responses:
+        "200":
+          description: Weekly activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeeklyActivity"
+
+  # ── Company Settings ──────────────────────────────────────────────────────
+  /settings:
+    get:
+      operationId: getCompanySettings
+      tags: [settings]
+      summary: Get company settings for authenticated company
+      responses:
+        "200":
+          description: Company settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanySettings"
+        "401":
+          description: Unauthorized
+    put:
+      operationId: updateCompanySettings
+      tags: [settings]
+      summary: Update company settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCompanySettingsBody"
+      responses:
+        "200":
+          description: Updated company settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanySettings"
+        "401":
+          description: Unauthorized
+
+  # ── Job Processes ──────────────────────────────────────────────────────────
+  /processes:
+    get:
+      operationId: listProcesses
+      tags: [processes]
+      summary: List all job processes for the company
+      responses:
+        "200":
+          description: List of job processes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JobProcess"
+    post:
+      operationId: createProcess
+      tags: [processes]
+      summary: Create a new job process
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProcessBody"
+      responses:
+        "201":
+          description: Created process
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobProcess"
+
+  /processes/{id}:
+    get:
+      operationId: getProcess
+      tags: [processes]
+      summary: Get a job process by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job process
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobProcessDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateProcess
+      tags: [processes]
+      summary: Update a job process
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProcessBody"
+      responses:
+        "200":
+          description: Updated process
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobProcess"
+    delete:
+      operationId: deleteProcess
+      tags: [processes]
+      summary: Delete a job process
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /processes/{id}/duplicate:
+    post:
+      operationId: duplicateProcess
+      tags: [processes]
+      summary: Duplicate a job process
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Duplicated process
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobProcess"
+
+  /processes/{id}/manager-link:
+    post:
+      operationId: generateManagerLink
+      tags: [manager]
+      summary: Generate a read-only manager view link for a process
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Manager link generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagerLink"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
+  # ── Manager View (public, read-only) ───────────────────────────────────────
+  /manager/{token}:
+    get:
+      operationId: getManagerView
+      tags: [manager]
+      summary: Get manager view — process overview with candidate scores (public)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Manager view
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagerView"
+        "404":
+          description: Not found
+
+  # ── Configurator Agent (chat to set up a process) ─────────────────────────
+  /processes/{id}/configure:
+    post:
+      operationId: configureProcessMessage
+      tags: [processes]
+      summary: Send a message to the configurator agent (SSE stream)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfigureMessageBody"
+      responses:
+        "200":
+          description: SSE stream of configurator agent response
+          content:
+            text/event-stream: {}
+
+  /processes/{id}/finalize-config:
+    post:
+      operationId: finalizeProcessConfig
+      tags: [processes]
+      summary: Finalize agent config (system prompt + criteria) and activate process
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Finalized process config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobProcessDetail"
+
+  # ── Candidates ─────────────────────────────────────────────────────────────
+  /processes/{id}/candidates:
+    get:
+      operationId: listCandidates
+      tags: [candidates]
+      summary: List candidates for a process
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: minScore
+          in: query
+          schema:
+            type: integer
+        - name: recommendation
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of candidates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Candidate"
+    post:
+      operationId: createCandidate
+      tags: [candidates]
+      summary: Add a candidate to a process (generates invite token)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCandidateBody"
+      responses:
+        "201":
+          description: Created candidate with invite link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CandidateWithLink"
+
+  /candidates/{candidateId}:
+    get:
+      operationId: getCandidate
+      tags: [candidates]
+      summary: Get a candidate with full evaluation report
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Candidate with evaluation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CandidateReport"
+        "404":
+          description: Not found
+
+  # ── Interview (public — no auth, token-based) ─────────────────────────────
+  /interview/{token}:
+    get:
+      operationId: getInterviewByToken
+      tags: [interviews]
+      summary: Get interview info by invite token (public)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Interview info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewInfo"
+        "404":
+          description: Invalid or expired token
+
+  /interview/{token}/start:
+    post:
+      operationId: startInterview
+      tags: [interviews]
+      summary: Start the interview session
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartInterviewBody"
+      responses:
+        "200":
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewSession"
+
+  /interview/{token}/message:
+    post:
+      operationId: sendInterviewMessage
+      tags: [interviews]
+      summary: Send a message to the interviewer agent (SSE stream)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendInterviewMessageBody"
+      responses:
+        "200":
+          description: SSE stream of interviewer agent response
+          content:
+            text/event-stream: {}
+
+  /interview/{token}/end:
+    post:
+      operationId: endInterview
+      tags: [interviews]
+      summary: End the interview session and trigger evaluation
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Interview ended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewEndResult"
+
+  # ── Evaluations ────────────────────────────────────────────────────────────
+  /evaluations/{candidateId}:
+    get:
+      operationId: getEvaluation
+      tags: [evaluations]
+      summary: Get evaluation for a candidate
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evaluation"
+        "404":
+          description: Not found
+
+  # ── Admin (owner) ──────────────────────────────────────────────────────────
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Admin login with email/password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginBody"
+      responses:
+        "200":
+          description: Admin token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminToken"
+        "401":
+          description: Invalid credentials
+
+  /admin/companies:
+    get:
+      operationId: adminListCompanies
+      tags: [admin]
+      summary: List all companies
+      responses:
+        "200":
+          description: List of companies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CompanyAdmin"
+
+  /admin/token-usage:
+    get:
+      operationId: adminGetTokenUsage
+      tags: [admin]
+      summary: Get token usage summary and logs
+      responses:
+        "200":
+          description: Token usage summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenUsageSummary"
+
+  /admin/token-usage/monthly:
+    get:
+      operationId: adminGetMonthlyUsage
+      tags: [admin]
+      summary: Get monthly token usage per company (last 12 months)
+      responses:
+        "200":
+          description: Monthly usage data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonthlyUsage"
+
+  # ── Anthropic (generic chat — used by configurator) ────────────────────────
+  /anthropic/conversations:
+    get:
+      operationId: listAnthropicConversations
+      tags: [anthropic]
+      summary: List all conversations
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnthropicConversation"
+    post:
+      operationId: createAnthropicConversation
+      tags: [anthropic]
+      summary: Create a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAnthropicConversationBody"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicConversation"
+
+  /anthropic/conversations/{id}:
+    get:
+      operationId: getAnthropicConversation
+      tags: [anthropic]
+      summary: Get conversation with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicConversationWithMessages"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicError"
+    delete:
+      operationId: deleteAnthropicConversation
+      tags: [anthropic]
+      summary: Delete a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnthropicError"
+
+  /anthropic/conversations/{id}/messages:
+    get:
+      operationId: listAnthropicMessages
+      tags: [anthropic]
+      summary: List messages in a conversation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnthropicMessage"
+    post:
+      operationId: sendAnthropicMessage
+      tags: [anthropic]
+      summary: Send a message and receive an AI response (SSE stream)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendAnthropicMessageBody"
+      responses:
+        "200":
+          description: SSE stream of assistant response chunks
+          content:
+            text/event-stream: {}
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager]
+        companyId:
+          type: string
+        companyName:
+          type: string
+      required: [id, email, role, companyId, companyName]
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalCandidatesEvaluated:
+          type: integer
+        activeProcesses:
+          type: integer
+        closedProcesses:
+          type: integer
+        averageApprovalRate:
+          type: number
+      required: [totalCandidatesEvaluated, activeProcesses, closedProcesses, averageApprovalRate]
+
+    WeeklyActivity:
+      type: object
+      properties:
+        week:
+          type: string
+        candidatesEvaluated:
+          type: integer
+      required: [week, candidatesEvaluated]
+
+    JobProcess:
+      type: object
+      properties:
+        id:
+          type: string
+        companyId:
+          type: string
+        title:
+          type: string
+        area:
+          type: string
+        seniority:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, paused, closed]
+        interviewType:
+          type: string
+          enum: [technical, behavioral, hybrid]
+        toolsAllowed:
+          type: boolean
+        responseTimeLimitSeconds:
+          type: integer
+          nullable: true
+        candidatesTotal:
+          type: integer
+        candidatesEvaluated:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, companyId, title, area, seniority, status, interviewType, toolsAllowed, candidatesTotal, candidatesEvaluated, createdAt]
+
+    JobProcessDetail:
+      allOf:
+        - $ref: "#/components/schemas/JobProcess"
+        - type: object
+          properties:
+            agentSystemPrompt:
+              type: string
+            configMessages:
+              type: array
+              items:
+                type: object
+                properties:
+                  role:
+                    type: string
+                  content:
+                    type: string
+                required: [role, content]
+            criteria:
+              type: array
+              items:
+                $ref: "#/components/schemas/EvaluationCriterion"
+
+    CreateProcessBody:
+      type: object
+      properties:
+        title:
+          type: string
+        area:
+          type: string
+        seniority:
+          type: string
+        interviewType:
+          type: string
+          enum: [technical, behavioral, hybrid]
+        toolsAllowed:
+          type: boolean
+      required: [title, area, seniority]
+
+    UpdateProcessBody:
+      type: object
+      properties:
+        title:
+          type: string
+        area:
+          type: string
+        seniority:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, paused, closed]
+        interviewType:
+          type: string
+          enum: [technical, behavioral, hybrid]
+        toolsAllowed:
+          type: boolean
+        responseTimeLimitSeconds:
+          type: integer
+          nullable: true
+        agentSystemPrompt:
+          type: string
+
+    ConfigureMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required: [content]
+
+    EvaluationCriterion:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        weight:
+          type: integer
+        descriptors:
+          type: object
+          additionalProperties: true
+      required: [id, name, weight]
+
+    Candidate:
+      type: object
+      properties:
+        id:
+          type: string
+        jobProcessId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        status:
+          type: string
+          enum: [invited, started, completed, expired]
+        overallScore:
+          type: integer
+          nullable: true
+        recommendation:
+          type: string
+          nullable: true
+        inviteToken:
+          type: string
+        tokenExpiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, jobProcessId, name, email, status, createdAt]
+
+    CandidateWithLink:
+      allOf:
+        - $ref: "#/components/schemas/Candidate"
+        - type: object
+          properties:
+            inviteLink:
+              type: string
+          required: [inviteLink]
+
+    CandidateReport:
+      allOf:
+        - $ref: "#/components/schemas/Candidate"
+        - type: object
+          properties:
+            evaluation:
+              $ref: "#/components/schemas/Evaluation"
+            transcript:
+              type: array
+              items:
+                type: object
+                properties:
+                  role:
+                    type: string
+                  content:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+                required: [role, content]
+
+    CreateCandidateBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        tokenExpiresHours:
+          type: integer
+          default: 72
+      required: [name, email]
+
+    InterviewInfo:
+      type: object
+      properties:
+        candidateId:
+          type: string
+        candidateName:
+          type: string
+        processTitle:
+          type: string
+        companyName:
+          type: string
+        companyLogoUrl:
+          type: string
+          nullable: true
+        interviewType:
+          type: string
+        toolsAllowed:
+          type: boolean
+        responseTimeLimitSeconds:
+          type: integer
+          nullable: true
+        estimatedMinutes:
+          type: integer
+        status:
+          type: string
+          enum: [pending, started, completed, expired]
+      required: [candidateId, candidateName, processTitle, companyName, interviewType, toolsAllowed, estimatedMinutes, status]
+
+    StartInterviewBody:
+      type: object
+      properties:
+        candidateName:
+          type: string
+      required: [candidateName]
+
+    InterviewSession:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+      required: [sessionId, startedAt]
+
+    SendInterviewMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+        sessionId:
+          type: string
+      required: [content, sessionId]
+
+    InterviewEndResult:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        endedAt:
+          type: string
+          format: date-time
+        evaluationStatus:
+          type: string
+          enum: [processing, completed]
+      required: [sessionId, endedAt, evaluationStatus]
+
+    Evaluation:
+      type: object
+      properties:
+        id:
+          type: string
+        candidateId:
+          type: string
+        overallScore:
+          type: integer
+        recommendation:
+          type: string
+        criteriaScores:
+          type: array
+          items:
+            $ref: "#/components/schemas/CriterionScore"
+        highlights:
+          type: array
+          items:
+            type: string
+        redFlags:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, candidateId, overallScore, recommendation, criteriaScores, highlights, redFlags, summary, createdAt]
+
+    CriterionScore:
+      type: object
+      properties:
+        name:
+          type: string
+        score:
+          type: integer
+        max:
+          type: integer
+        weight:
+          type: integer
+        justification:
+          type: string
+      required: [name, score, max, weight, justification]
+
+    CompanySettings:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        plan:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, trial]
+        website:
+          type: string
+          nullable: true
+        industry:
+          type: string
+          nullable: true
+        companySize:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+          nullable: true
+        interviewLanguage:
+          type: string
+          nullable: true
+        hrContactName:
+          type: string
+          nullable: true
+        hrContactEmail:
+          type: string
+          nullable: true
+        hrContactPhone:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, plan, status, createdAt]
+
+    UpdateCompanySettingsBody:
+      type: object
+      properties:
+        name:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        industry:
+          type: string
+          nullable: true
+        companySize:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+          nullable: true
+        interviewLanguage:
+          type: string
+          nullable: true
+        hrContactName:
+          type: string
+          nullable: true
+        hrContactEmail:
+          type: string
+          nullable: true
+        hrContactPhone:
+          type: string
+          nullable: true
+
+    ManagerLink:
+      type: object
+      properties:
+        managerViewToken:
+          type: string
+        link:
+          type: string
+      required: [managerViewToken, link]
+
+    ManagerCandidate:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [invited, started, completed, expired]
+        overallScore:
+          type: integer
+          nullable: true
+        recommendation:
+          type: string
+          nullable: true
+        summary:
+          type: string
+          nullable: true
+        highlights:
+          type: array
+          nullable: true
+          items:
+            type: string
+        redFlags:
+          type: array
+          nullable: true
+          items:
+            type: string
+        criteriaScores:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/CriterionScore"
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, status, createdAt]
+
+    ManagerView:
+      type: object
+      properties:
+        processId:
+          type: string
+        processTitle:
+          type: string
+        companyName:
+          type: string
+        companyLogoUrl:
+          type: string
+          nullable: true
+        area:
+          type: string
+        seniority:
+          type: string
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManagerCandidate"
+      required: [processId, processTitle, companyName, area, seniority, candidates]
+
+    AdminLoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required: [email, password]
+
+    AdminToken:
+      type: object
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+      required: [token, expiresAt]
+
+    CompanyAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        plan:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, trial]
+        processesCreated:
+          type: integer
+        candidatesEvaluated:
+          type: integer
+        tokensUsedMonth:
+          type: integer
+        costMonth:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, plan, status, processesCreated, candidatesEvaluated, tokensUsedMonth, costMonth, createdAt]
+
+    TokenUsageSummary:
+      type: object
+      properties:
+        tokensUsedMonth:
+          type: integer
+        tokensUsedYear:
+          type: integer
+        costMonthUsd:
+          type: number
+        costYearUsd:
+          type: number
+        topCompanies:
+          type: array
+          items:
+            type: object
+            properties:
+              companyName:
+                type: string
+              tokensUsed:
+                type: integer
+              costUsd:
+                type: number
+            required: [companyName, tokensUsed, costUsd]
+        recentLogs:
+          type: array
+          items:
+            $ref: "#/components/schemas/TokenUsageLog"
+      required: [tokensUsedMonth, tokensUsedYear, costMonthUsd, costYearUsd, topCompanies, recentLogs]
+
+    MonthlyUsage:
+      type: object
+      properties:
+        month:
+          type: string
+        tokensInput:
+          type: integer
+        tokensOutput:
+          type: integer
+        costUsd:
+          type: number
+      required: [month, tokensInput, tokensOutput, costUsd]
+
+    TokenUsageLog:
+      type: object
+      properties:
+        id:
+          type: string
+        companyName:
+          type: string
+        processTitle:
+          type: string
+        candidateName:
+          type: string
+          nullable: true
+        tokensInput:
+          type: integer
+        tokensOutput:
+          type: integer
+        costUsd:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, companyName, processTitle, tokensInput, tokensOutput, costUsd, createdAt]
+
+    AnthropicConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, createdAt]
+
+    AnthropicMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, conversationId, role, content, createdAt]
+
+    CreateAnthropicConversationBody:
+      type: object
+      properties:
+        title:
+          type: string
+      required: [title]
+
+    SendAnthropicMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required: [content]
+
+    AnthropicConversationWithMessages:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnthropicMessage"
+      required: [id, title, createdAt, messages]
+
+    AnthropicError:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
