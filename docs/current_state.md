@@ -56,6 +56,7 @@ This document provides a detailed checklist of what is currently implemented in 
 - [x] **Mobile navigation added to landing page**: Hamburger menu reveals How it Works / Pricing / FAQ anchor links on mobile; collapses on link tap.
 - [x] **Report page skeleton fixed**: Loading skeleton `grid-cols-3` was not responsive — fixed to `grid-cols-1 md:grid-cols-3`.
 - [x] **CTA audit**: All buttons on landing page, interview page, and report page route correctly. `mailto:sales@hireforward.ai` and `mailto:hello@hireforward.ai` are intentional contact links. No dead routes.
+- [x] **Payment issue banner**: Sticky red banner shown at the top of all authenticated Company Panel pages when `company.status` is `past_due` or `suspended`. Content: "Your subscription has a payment issue. Update your payment method to avoid losing access." with a "Fix Now →" button that opens the Stripe Customer Portal (`/api/billing/portal`). Dismissible per session (sessionStorage — reappears on next login). Not shown on `/settings/billing`. Uses the same `billing-status` React Query cache key as the billing page — no extra network requests on subsequent navigations.
 
 ---
 
