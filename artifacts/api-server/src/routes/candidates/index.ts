@@ -194,6 +194,47 @@ router.post("/processes/:id/candidates/:candidateId/resend-invite", requireAuth,
   }
 });
 
+router.patch("/candidates/:candidateId/stage", requireAuth, async (req, res) => {
+  try {
+    const companyId = await getCompanyId(req);
+    if (!companyId) return void res.status(401).json({ error: "Unauthorized" });
+    const candidateId = String(req.params.candidateId);
+
+    const validStages = ["new", "reviewing", "shortlisted", "approved", "rejected"] as const;
+    const { stage } = req.body as { stage: string };
+    if (!stage || !validStages.includes(stage as typeof validStages[number])) {
+      return void res.status(400).json({ error: "Invalid stage. Must be one of: " + validStages.join(", ") });
+    }
+
+    const candidates = await db
+      .select()
+      .from(candidatesTable)
+      .where(eq(candidatesTable.id, candidateId))
+      .limit(1);
+
+    if (candidates.length === 0) return void res.status(404).json({ error: "Candidate not found" });
+
+    const processes = await db
+      .select()
+      .from(jobProcessesTable)
+      .where(and(eq(jobProcessesTable.id, candidates[0].jobProcessId), eq(jobProcessesTable.companyId, companyId)))
+      .limit(1);
+
+    if (processes.length === 0) return void res.status(403).json({ error: "Forbidden" });
+
+    const [updated] = await db
+      .update(candidatesTable)
+      .set({ pipelineStage: stage as typeof validStages[number] })
+      .where(eq(candidatesTable.id, candidateId))
+      .returning();
+
+    res.json(updated);
+  } catch (err) {
+    req.log.error({ err }, "Failed to update candidate pipeline stage");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/candidates/:candidateId", requireAuth, async (req, res) => {
   try {
     const companyId = await getCompanyId(req);

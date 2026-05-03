@@ -3,6 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 export const candidateStatusEnum = pgEnum("candidate_status", ["invited", "started", "completed", "expired"]);
+export const pipelineStageEnum = pgEnum("pipeline_stage", ["new", "reviewing", "shortlisted", "approved", "rejected"]);
 
 export const candidatesTable = pgTable("candidates", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -10,6 +11,7 @@ export const candidatesTable = pgTable("candidates", {
   name: text("name").notNull(),
   email: text("email").notNull(),
   status: candidateStatusEnum("status").notNull().default("invited"),
+  pipelineStage: pipelineStageEnum("pipeline_stage").notNull().default("new"),
   inviteToken: text("invite_token").notNull(),
   tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

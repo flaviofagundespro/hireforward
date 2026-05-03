@@ -398,6 +398,35 @@ paths:
         "404":
           description: Not found
 
+  /candidates/{candidateId}/stage:
+    patch:
+      operationId: updateCandidatePipelineStage
+      tags: [candidates]
+      summary: Update a candidate's pipeline stage
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCandidatePipelineStageBody"
+      responses:
+        "200":
+          description: Updated candidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Candidate"
+        "400":
+          description: Invalid stage
+        "404":
+          description: Not found
+
   # ── Interview (public — no auth, token-based) ─────────────────────────────
   /interview/{token}:
     get:
@@ -869,6 +898,10 @@ components:
         status:
           type: string
           enum: [invited, started, completed, expired]
+        pipelineStage:
+          type: string
+          enum: [new, reviewing, shortlisted, approved, rejected]
+          nullable: true
         overallScore:
           type: integer
           nullable: true
@@ -927,6 +960,14 @@ components:
           type: integer
           default: 72
       required: [name, email]
+
+    UpdateCandidatePipelineStageBody:
+      type: object
+      properties:
+        stage:
+          type: string
+          enum: [new, reviewing, shortlisted, approved, rejected]
+      required: [stage]
 
     InterviewInfo:
       type: object

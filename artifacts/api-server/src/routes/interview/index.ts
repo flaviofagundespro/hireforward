@@ -222,7 +222,7 @@ router.post("/interview/:token/end", async (req, res) => {
 
     await db
       .update(candidatesTable)
-      .set({ status: "completed" })
+      .set({ status: "completed", pipelineStage: "reviewing" })
       .where(eq(candidatesTable.id, payload.candidateId));
 
     triggerEvaluation(session.id, payload.candidateId).catch(err => {

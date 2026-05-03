@@ -48,6 +48,7 @@ import type {
   SendInterviewMessageBody,
   StartInterviewBody,
   TokenUsageSummary,
+  UpdateCandidatePipelineStageBody,
   UpdateCompanySettingsBody,
   UpdateProcessBody,
   UserProfile,
@@ -2912,4 +2913,94 @@ export const useSendAnthropicMessage = <
   TContext
 > => {
   return useMutation(getSendAnthropicMessageMutationOptions(options));
+};
+
+/**
+ * @summary Update a candidate's pipeline stage
+ */
+export const getUpdateCandidatePipelineStageUrl = (candidateId: string) => {
+  return `/api/candidates/${candidateId}/stage`;
+};
+
+export const updateCandidatePipelineStage = async (
+  candidateId: string,
+  data: UpdateCandidatePipelineStageBody,
+  options?: RequestInit,
+): Promise<Candidate> => {
+  return customFetch<Candidate>(
+    getUpdateCandidatePipelineStageUrl(candidateId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(data),
+    },
+  );
+};
+
+export const getUpdateCandidatePipelineStageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCandidatePipelineStage>>,
+    TError,
+    { candidateId: string; data: BodyType<UpdateCandidatePipelineStageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCandidatePipelineStage>>,
+  TError,
+  { candidateId: string; data: BodyType<UpdateCandidatePipelineStageBody> },
+  TContext
+> => {
+  const mutationKey = ["updateCandidatePipelineStage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCandidatePipelineStage>>,
+    { candidateId: string; data: BodyType<UpdateCandidatePipelineStageBody> }
+  > = (props) => {
+    const { candidateId, data } = props ?? {};
+    return updateCandidatePipelineStage(candidateId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCandidatePipelineStageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCandidatePipelineStage>>
+>;
+export type UpdateCandidatePipelineStageMutationBody =
+  BodyType<UpdateCandidatePipelineStageBody>;
+export type UpdateCandidatePipelineStageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a candidate's pipeline stage
+ */
+export const useUpdateCandidatePipelineStage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCandidatePipelineStage>>,
+    TError,
+    { candidateId: string; data: BodyType<UpdateCandidatePipelineStageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCandidatePipelineStage>>,
+  TError,
+  { candidateId: string; data: BodyType<UpdateCandidatePipelineStageBody> },
+  TContext
+> => {
+  return useMutation(getUpdateCandidatePipelineStageMutationOptions(options));
 };

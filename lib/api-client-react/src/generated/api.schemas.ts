@@ -152,12 +152,28 @@ export const CandidateStatus = {
   expired: "expired",
 } as const;
 
+export type CandidatePipelineStage =
+  (typeof CandidatePipelineStage)[keyof typeof CandidatePipelineStage];
+
+export const CandidatePipelineStage = {
+  new: "new",
+  reviewing: "reviewing",
+  shortlisted: "shortlisted",
+  approved: "approved",
+  rejected: "rejected",
+} as const;
+
+export interface UpdateCandidatePipelineStageBody {
+  stage: CandidatePipelineStage;
+}
+
 export interface Candidate {
   id: string;
   jobProcessId: string;
   name: string;
   email: string;
   status: CandidateStatus;
+  pipelineStage?: CandidatePipelineStage | null;
   overallScore?: number | null;
   recommendation?: string | null;
   inviteToken?: string;
